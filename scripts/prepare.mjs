@@ -134,3 +134,25 @@ for (const [entry, target] of [
 }
 
 console.log('overlay applied: .storybook, src/stories, next.config.js');
+
+// ------------------------------------------------------------------- a history
+
+/**
+ * The integration, committed into the checkout it was applied to.
+ *
+ * Not tidiness. `variance run --against` reads the diff from the repository that
+ * holds the scanned source, and here that is `app/` — the outer repository was
+ * told to ignore it. Left uncommitted, the shop and the integration and the
+ * change under review are one undifferentiated working tree, and there is no ref
+ * to ask a question against. With this commit there is: the integration is the
+ * baseline, and `scripts/revise.mjs` lands the revision on top of it.
+ */
+if (
+  execFileSync('git', ['status', '--porcelain'], { cwd: app, encoding: 'utf8' }).trim() !== ''
+) {
+  run('git', ['add', '-A'], app);
+  run('git', ['-c', 'user.email=variance@example.test', '-c', 'user.name=Variance',
+    'commit', '--quiet', '-m',
+    'Prepare snkr-shop for variance: pinned images, Storybook overlay, next.config'], app);
+  console.log('committed the integration, so the revision has something to be against');
+}

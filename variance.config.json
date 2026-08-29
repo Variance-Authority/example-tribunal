@@ -18,7 +18,7 @@
       { "axis": "scheme", "values": ["light", "dark"] }
     ]
   },
-  "source": { "dirs": ["app/src"] },
+  "source": { "dirs": ["app/src"], "relations": true },
   "report": "out/report.json",
   "images": "out/images",
   "review": {

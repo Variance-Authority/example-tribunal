@@ -34,6 +34,7 @@
  *     node scripts/revise.mjs          # apply
  *     node scripts/revise.mjs --undo   # put the shop back
  */
+import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -94,4 +95,33 @@ for (const edit of EDITS) {
 
   writeFileSync(path, source);
   console.log(`${undo ? 'reverted' : 'revised'}: ${edit.file} (${edit.swaps.length} swap(s))`);
+}
+
+/**
+ * And the same three files, as a commit.
+ *
+ * This is what `variance run --against HEAD~1` reads. Without it the edit exists
+ * only as a dirty working tree, git has no two states to compare, and the run can
+ * say which subjects moved but not which files could have moved them — which is
+ * the entire question this example was built to ask.
+ *
+ * Undoing is a mixed reset rather than a second commit. The files on disk have
+ * already been put back by the loop above; moving HEAD and the index back to the
+ * integration leaves the checkout exactly as `prepare.mjs` left it, and a history
+ * that recorded the revision and its retraction would offer `HEAD~1` as a ref
+ * meaning something different each time it was asked.
+ */
+const MESSAGE = 'Restyle the primary button, price and cart badge';
+const git = (...args) => execFileSync('git', args, { cwd: app, encoding: 'utf8' });
+
+if (undo) {
+  if (git('log', '-1', '--format=%s').trim() === MESSAGE) {
+    git('reset', '--quiet', 'HEAD~1');
+    console.log('uncommitted the revision; HEAD is the integration again');
+  }
+} else {
+  git('add', '--', ...EDITS.map((edit) => edit.file));
+  git('-c', 'user.email=variance@example.test', '-c', 'user.name=Variance',
+    'commit', '--quiet', '-m', MESSAGE);
+  console.log(`committed: ${MESSAGE}`);
 }

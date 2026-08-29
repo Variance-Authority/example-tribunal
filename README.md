@@ -63,11 +63,18 @@ npm run app:serve &      # the built shop on :3100
 Two runs, because a comparison needs something to compare against:
 
 ```bash
-npm run variance -- run          # build 1: 20 new subjects, baselines written
-npm run revise                   # apply the change under review
+npm run variance -- run                          # build 1: 20 new subjects, baselines written
+npm run revise                                   # apply the change under review, as a commit
 npm run app:build
-npm run variance -- run          # build 2: the same 20, against build 1
+npm run variance -- run --against HEAD~1         # build 2: the same 20, against build 1
 ```
+
+`--against` is the half of this a differ cannot do. Without it the run still
+reports which subjects moved; with it, and with `source.relations` set, it also
+reads which files the commit touched and which components those files reach —
+so the build page can say this component is the cause in seven renders, that
+one is present in ten and the cause in none, and this difference has no path
+from the commit to anything in the render it appeared in.
 
 The review surface is a process, a port, a file and two tokens:
 
@@ -90,10 +97,10 @@ puts the shop back.
 
 ## What is in here
 
-    variance.config.json     one run, two surfaces, and the axis vocabulary
+    variance.config.json     one run, two surfaces, the axis vocabulary, the file graph
     variance/collector.mjs   both shipped collectors behind one `kind: "collector"`
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
-    scripts/revise.mjs       the change under review, as a patch
+    scripts/revise.mjs       the change under review, committed so `--against` has a ref
 
 Each of those files carries its reasoning at the top. This page is the map.
