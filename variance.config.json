@@ -18,6 +18,27 @@
       { "axis": "scheme", "values": ["light", "dark"] }
     ]
   },
+  "ignore": [
+    {
+      "id": "nav-cart-badge",
+      "reason": "the badge prints how many items are in the visitor's cart, which is session state; these two stories exist to check that the nav lays out, and one of them is the empty cart",
+      "select": "a[aria-label=\"cart\"] > div",
+      "subjects": ["story:main-nav--*"]
+    },
+    {
+      "id": "promo-countdown",
+      "reason": "the launch countdown re-rendered every second, so no two captures of it ever matched",
+      "select": "[data-promo-countdown]"
+    }
+  ],
+  "sensitivity": [
+    {
+      "id": "routes-assemble",
+      "reason": "a route capture asserts that the page still assembles — the nav is where it was, nothing collapsed. The tokens inside it belong to components, and every one of them has a story that asserts on them strictly.",
+      "level": "layout",
+      "subjects": ["route/*"]
+    }
+  ],
   "source": { "dirs": ["app/src"], "relations": true },
   "report": "out/report.json",
   "images": "out/images",
