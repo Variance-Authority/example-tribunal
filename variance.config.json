@@ -1,0 +1,28 @@
+{
+  "project": "snkr-shop",
+  "profile": "chromium",
+  "viewport": { "width": 1280, "height": 900 },
+  "retention": "durable",
+  "intent": "snkr-shop, read as routes and as stories, in one run",
+  "subjects": {
+    "kind": "collector",
+    "collector": "variance/collector.mjs"
+  },
+  "baselines": {
+    "kind": "directory",
+    "root": ".variance/baselines"
+  },
+  "names": {
+    "axes": [
+      { "axis": "offer", "values": ["control", "sale"] },
+      { "axis": "scheme", "values": ["light", "dark"] }
+    ]
+  },
+  "source": { "dirs": ["app/src"] },
+  "report": "out/report.json",
+  "images": "out/images",
+  "review": {
+    "endpoint": "http://127.0.0.1:7789",
+    "token": { "env": "VARIANCE_INGEST_TOKEN" }
+  }
+}

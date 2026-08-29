@@ -1,0 +1,29 @@
+{
+  "name": "@variance-authority/example-tribunal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A third-party storefront, read as routes and as stories, reviewed in a tribunal.",
+  "scripts": {
+    "app:fetch": "node scripts/prepare.mjs",
+    "app:build": "npm --prefix app run build && npm --prefix app run build-storybook",
+    "app:serve": "npm --prefix app run start:variance",
+    "revise": "node scripts/revise.mjs",
+    "variance": "variance",
+    "tribunal": "variance-authority-tribunal",
+    "push": "variance push"
+  },
+  "devDependencies": {
+    "@variance-authority/cli": "^0.0.0-beta.1",
+    "@variance-authority/route-collector": "^0.0.0-beta.1",
+    "@variance-authority/storybook": "^0.0.0-beta.1",
+    "@variance-authority/storybook-collector": "^0.0.0-beta.1",
+    "@variance-authority/tribunal": "^0.0.0-beta.1",
+    "playwright": "^1.49.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true
+  }
+}

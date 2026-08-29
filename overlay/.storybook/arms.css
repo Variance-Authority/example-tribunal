@@ -1,0 +1,48 @@
+/*
+ * The two arms of the experiment, as an ancestor's tokens.
+ *
+ * The shop's `globals.css` declares one `:root` block of HSL triplets and
+ * `tailwind.config.ts` sets `darkMode: ['class']` — with no `.dark` block
+ * anywhere to answer it. So a dark arm has to bring its own values, which is
+ * exactly the shape a real flag has: nothing about the component changes, an
+ * element above it declares different tokens, and every descendant repaints.
+ *
+ * Written as CSS rather than as Tailwind classes on the wrapper because the
+ * story is not "a differently-styled card". It is the same card under a
+ * different variable environment, which is the thing an A/B actually ships.
+ */
+
+.arm {
+  display: inline-block;
+  padding: 24px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* offer = sale */
+.arm-sale {
+  --primary: 349 89% 43%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 349 89% 43%;
+}
+
+/* scheme = dark */
+.arm-dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 14%;
+  --card-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 25%;
+  --input: 217 33% 25%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+}
+
+.arm-dark.arm-sale {
+  --primary: 349 89% 55%;
+  --primary-foreground: 222 47% 11%;
+}
