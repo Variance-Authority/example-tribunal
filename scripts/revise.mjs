@@ -26,6 +26,15 @@
  *    `main-nav` stories: ten subjects, ranked last by area, and the one edit
  *    here that a reviewer skimming a list of thumbnails would never find.
  *
+ * The fourth swap is not a restyle and is not visible at all. While relabelling
+ * the preview control, `ProductCard` gains an `aria-label` that does not contain
+ * the word on the button — so a voice command using the visible word stops
+ * reaching it. It moves no pixels, so no comparison can report it; it is read
+ * out of the render itself, and it is the only thing in this commit whose
+ * *arrival* is the finding. Every other defect these renders carry, the shop
+ * already had, and a review that cannot tell those apart hands a reviewer
+ * sixty-four defects to approve a button colour under.
+ *
  * The Button edit is also the A/B lattice's business. `product-card--sale` and
  * `product-card--control` differ in the `offer` axis, which is carried by a
  * `Button`; a run that reports both arms moving reports the same cause twice
@@ -58,6 +67,10 @@ const EDITS = [
       [
         '<div className="text-xl font-semibold">${price}</div>',
         '<div className="text-2xl font-semibold tabular-nums">${price}.00</div>',
+      ],
+      [
+        '<Button size="sm">Preview</Button>',
+        '<Button size="sm" aria-label="See details">Preview</Button>',
       ],
     ],
   },
