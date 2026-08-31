@@ -29,6 +29,35 @@ the counter-claim — components named as causes, each with the file it is
 declared in, ranked by the pixels attributable to the edit, and everything that
 merely moved counted as one build-level number.
 
+## The change no image can see
+
+`scripts/handler.mjs` is the other half. It wraps the cart's Remove button in a
+`confirm()` — same tree, same text, same box, same colour, and a different
+thing when you press it. No visual tool can report that, and none should
+pretend to.
+
+The question a tool can be asked is the one before it: **which subjects did you
+open, and how do you know the rest were safe to skip?** `run --since HEAD~1`
+reads the diff against what every stored baseline records having rendered, and
+`CartCard` is in two stories and one route. Twenty subjects become two:
+
+```bash
+npm run handler                                  # the behavioural change, as a commit
+npm run app:build
+npm run variance -- run --since HEAD~1
+```
+
+    2 of 20 subject(s) observed
+    2 unchanged, 18 not observed
+    not observed: 18 subject(s) — 0 the run could not see, 0 excluded by
+    configuration, 18 not reached by this change
+
+The eighteen are the answer. They are not `excluded` — nobody configured them —
+and not `failed`; the run read the diff and concluded the change cannot arrive.
+Each one names the baseline it was ruled out against, so the sentence is
+checkable against the thing it was derived from. `npm run handler -- --undo`
+puts the shop back.
+
 ## The A/B arm
 
 `overlay/stories/ProductCard.stories.jsx` puts one card at four coordinates:
@@ -102,5 +131,6 @@ puts the shop back.
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
     scripts/revise.mjs       the change under review, committed so `--against` has a ref
+    scripts/handler.mjs      a behavioural edit, so `--since` has something to narrow
 
 Each of those files carries its reasoning at the top. This page is the map.

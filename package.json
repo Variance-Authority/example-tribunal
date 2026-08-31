@@ -9,6 +9,7 @@
     "app:build": "npm --prefix app run build && npm --prefix app run build-storybook",
     "app:serve": "npm --prefix app run start:variance",
     "revise": "node scripts/revise.mjs",
+    "handler": "node scripts/handler.mjs",
     "variance": "variance",
     "tribunal": "variance-authority-tribunal",
     "push": "variance push"
