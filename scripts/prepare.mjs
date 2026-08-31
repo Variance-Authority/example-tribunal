@@ -93,6 +93,7 @@ run(
     '@storybook/nextjs-vite@^9.1.13',
     'vite@^6.0.0',
     '@variance-authority/jsx-source@^0.0.0-beta.1',
+    '@variance-authority/sense@^0.0.0-beta.1',
   ],
   app,
 );
@@ -134,6 +135,61 @@ for (const [entry, target] of [
 }
 
 console.log('overlay applied: .storybook, src/stories, next.config.js');
+
+// -------------------------------------------------------- a behaviour to edit
+
+/**
+ * One effect, added to the cart row, so the shop has two behaviours in one file.
+ *
+ * `CartCard` already has a click handler. It gets an impression effect here, and
+ * the pair is what `scripts/effect.mjs` and `scripts/handler.mjs` each change one
+ * line of. Same component, same file, same import graph, and no pixel moves
+ * either way — so a selector that reads only source relations must answer the
+ * same for both, and only a run that recorded which regions the shot entered can
+ * tell them apart.
+ *
+ * Applied as a patch rather than shipped in `overlay/` because it belongs to a
+ * component the shop wrote. An overlay copy would replace the file, and then the
+ * component under review would be this repository's rather than snkr-shop's.
+ */
+const IMPRESSION = [
+  [
+    "import products from '@/assets/data.json';",
+    "'use client';\n\nimport products from '@/assets/data.json';",
+  ],
+  [
+    "import Link from 'next/link';",
+    "import Link from 'next/link';\nimport { useEffect } from 'react';",
+  ],
+  [
+    '  if (!product) return null;',
+    [
+      '  useEffect(() => {',
+      "    const shown = new CustomEvent('cart:row-shown', { detail: item.id });",
+      '    window.dispatchEvent(shown);',
+      '  }, [item.id]);',
+      '',
+      '  if (!product) return null;',
+    ].join('\n'),
+  ],
+];
+
+const card = join(app, 'src/components/CartCard.tsx');
+let source = readFileSync(card, 'utf8');
+
+for (const [before, after] of IMPRESSION) {
+  const found = source.split(before).length - 1;
+  if (found !== 1) {
+    throw new Error(
+      `CartCard.tsx contains ${found} occurrence(s) of ${JSON.stringify(before)} and the ` +
+        'impression patch expects exactly one. The shop has moved.',
+    );
+  }
+  source = source.replace(before, after);
+}
+
+writeFileSync(card, source);
+console.log('patched: CartCard reports an impression');
 
 // ------------------------------------------------------------------- a history
 

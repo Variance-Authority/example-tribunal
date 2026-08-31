@@ -87,7 +87,10 @@ export default async function subjects(context) {
   const index = await readStoryIndex(INDEX);
   const planned = toSubjects(index, { viewport: context.config.viewport });
 
-  const stories = await storybookCollector({ source: SOURCE })({
+  // `tests` drains the execution journal the preview's probes fill, one window
+  // per story, and joins them into the index `--since` narrows by. The label is
+  // the one `.storybook/main.js` built with; a mismatch reads an empty index.
+  const stories = await storybookCollector({ source: SOURCE, tests: { label: 'storybook' } })({
     // `index` is what `subjects.kind: "storybook"` puts here, and it is the
     // directory to serve as much as it is the file to read.
     config: { ...context.config, subjects: { ...context.config.subjects, index: INDEX } },

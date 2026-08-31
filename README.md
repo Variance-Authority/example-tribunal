@@ -4,7 +4,7 @@ A verification of [Variance Authority](https://github.com/variance-authority/var
 against an application nobody here wrote: [`argos-ci/snkr-shop`](https://github.com/argos-ci/snkr-shop),
 a Next.js storefront, cloned at a pinned commit and never vendored.
 
-The shop is read as **four routes at two widths** and as **twelve stories**, in
+The shop is read as **four routes at two widths** and as **thirteen stories**, in
 one run, against one baseline set, into one report — then pushed to a
 [tribunal](https://github.com/variance-authority/variance-authority/tree/main/packages/tribunal)
 and reviewed on a build page.
@@ -31,32 +31,60 @@ merely moved counted as one build-level number.
 
 ## The change no image can see
 
-`scripts/handler.mjs` is the other half. It wraps the cart's Remove button in a
-`confirm()` — same tree, same text, same box, same colour, and a different
-thing when you press it. No visual tool can report that, and none should
-pretend to.
+`scripts/handler.mjs` and `scripts/effect.mjs` are a matched pair. Each rewrites
+one line of `CartCard.tsx`, four lines apart — one inside the `onClick` of the
+Remove button, one inside a `useEffect` that fires on mount. Neither moves a
+pixel.
 
-The question a tool can be asked is the one before it: **which subjects did you
-open, and how do you know the rest were safe to skip?** `run --since HEAD~1`
-reads the diff against what every stored baseline records having rendered, and
-`CartCard` is in two stories and one route. Twenty subjects become two:
+Nothing static separates them. Not the diff, not the import graph, not the
+baselines: `CartCard` is in three stories and one route either way, so a
+`--since` that reads source relations alone answers *these three* for both, and
+is wrong once. One story clicks.
+
+`overlay/.storybook/main.js` runs the preview through `testSelectionProbes`,
+which splices a probe at every arrival region — module, function, branch,
+continuation, loop, await. Each shot leaves behind the regions it crossed, keyed
+by story. `--since` reads the diff's hunk headers against that recording, and
+the pair comes apart:
 
 ```bash
-npm run handler                                  # the behavioural change, as a commit
+npm run effect                                   # one line, inside the useEffect
 npm run app:build
 npm run variance -- run --since HEAD~1
 ```
 
-    2 of 20 subject(s) observed
-    2 unchanged, 18 not observed
-    not observed: 18 subject(s) — 0 the run could not see, 0 excluded by
-    configuration, 18 not reached by this change
+    3 of 21 subject(s) observed
+    3 unchanged, 18 not observed
+    `--since HEAD~1` ruled out 18 subjects: 18 by what the diff declares and
+    reaches, 0 by what the last run recorded entering.
 
-The eighteen are the answer. They are not `excluded` — nobody configured them —
-and not `failed`; the run read the diff and concluded the change cannot arrive.
-Each one names the baseline it was ruled out against, so the sentence is
-checkable against the thing it was derived from. `npm run handler -- --undo`
-puts the shop back.
+```bash
+npm run effect -- --undo && npm run handler      # one line, inside the onClick
+npm run app:build
+npm run variance -- run --since HEAD~1
+```
+
+    1 of 21 subject(s) observed
+    1 unchanged, 20 not observed
+    `--since HEAD~1` ruled out 20 subjects: 18 by what the diff declares and
+    reaches, 2 by what the last run recorded entering.
+
+Eighteen either way, then two more. The eighteen are not `excluded` — nobody
+configured them — and not `failed`: the run read the diff and concluded the
+change cannot arrive, and each names the baseline it was ruled out against. The
+last two are the sentence a differ has no way to write:
+
+    [unreached] story:cart-card--item: not affected by the diff against HEAD~1:
+    the last run recorded every region it entered while it was painted, and this
+    diff changed none of them
+
+What survives is `story:cart-card--removing`, whose play function clicks Remove.
+It is the only subject that has ever executed the lines this commit changed.
+
+The two counts stay apart because the grounds are not equally durable. A diff is
+read fresh; a journey is a recording, and a recording can predate the subject it
+is silent about. So a subject the journal holds no whole observation of is
+observed rather than skipped. `npm run handler -- --undo` puts the shop back.
 
 ## The A/B arm
 
@@ -92,10 +120,10 @@ npm run app:serve &      # the built shop on :3100
 Two runs, because a comparison needs something to compare against:
 
 ```bash
-npm run variance -- run                          # build 1: 20 new subjects, baselines written
+npm run variance -- run                          # build 1: 21 new subjects, baselines written
 npm run revise                                   # apply the change under review, as a commit
 npm run app:build
-npm run variance -- run --against HEAD~1         # build 2: the same 20, against build 1
+npm run variance -- run --against HEAD~1         # build 2: the same 21, against build 1
 ```
 
 `--against` is the half of this a differ cannot do. Without it the run still
@@ -131,6 +159,8 @@ puts the shop back.
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
     scripts/revise.mjs       the change under review, committed so `--against` has a ref
-    scripts/handler.mjs      a behavioural edit, so `--since` has something to narrow
+    scripts/behaviour.mjs    one line changed, no pixel moved, committed so a diff exists
+    scripts/handler.mjs      that line inside an `onClick` — one story ever entered it
+    scripts/effect.mjs       that line inside a `useEffect` — every story ran it
 
 Each of those files carries its reasoning at the top. This page is the map.
