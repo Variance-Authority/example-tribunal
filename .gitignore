@@ -2,5 +2,7 @@ node_modules/
 app/
 out/
 .variance/
-tribunal/
+variance-tribunal.db*
+variance-tribunal-objects/
 *.log
+.DS_Store

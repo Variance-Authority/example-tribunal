@@ -108,8 +108,6 @@ renders identically to the subject it varies from: both are green, both are
 
 ## Running it
 
-Needs the `@variance-authority` packages on a registry `.npmrc` can reach.
-
 ```bash
 npm install
 npm run app:fetch        # clone the shop, pin its images, add the Storybook

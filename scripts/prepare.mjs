@@ -32,8 +32,8 @@
  *    `d`. Both are argued at the settings, in `overlay/next.config.js`.
  * 5. **The Storybook toolchain is installed into the app**, not here. Stories
  *    import `next/image` and `@/components/...`; they resolve where the
- *    application resolves — and so the app gets a copy of this repository's
- *    `.npmrc`, which is how `@variance-authority/*` is found at all.
+ *    application resolves, so the packages that read them are installed there
+ *    too.
  */
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -63,8 +63,6 @@ if (!existsSync(app)) {
   console.log(`snkr-shop @ ${COMMIT.slice(0, 12)}`);
 }
 
-cpSync(join(root, '.npmrc'), join(app, '.npmrc'));
-
 const manifest = join(app, 'package.json');
 const shop = JSON.parse(readFileSync(manifest, 'utf8'));
 shop.dependencies['next'] = '^14.2.0';
@@ -92,8 +90,8 @@ run(
     'storybook@^9.1.13',
     '@storybook/nextjs-vite@^9.1.13',
     'vite@^6.0.0',
-    '@variance-authority/jsx-source@^0.0.0-beta.1',
-    '@variance-authority/sense@^0.0.0-beta.1',
+    '@variance-authority/jsx-source@^0.1.0',
+    '@variance-authority/sense@^0.1.0',
   ],
   app,
 );
