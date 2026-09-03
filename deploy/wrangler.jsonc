@@ -18,7 +18,7 @@
     {
       "binding": "DB",
       "database_name": "variance-tribunal-example",
-      "database_id": "PLACEHOLDER — replace with the id `wrangler d1 create` prints",
+      "database_id": "0ad2a7eb-9a40-41f8-ac4a-6566f6489aae",
       "migrations_dir": "../node_modules/@variance-authority/tribunal/migrations"
     }
   ],
