@@ -174,10 +174,24 @@ npx wrangler secret put REVIEW_TOKEN --config deploy/wrangler.jsonc
 npm run deploy
 ```
 
-The route claims `tribunal-example.variance-authority.dev` as a custom domain,
-so that address is what `review.endpoint` is set to and what `variance push`
-writes to. `npm run deploy -- --dry-run` builds and resolves the bindings
-without an account, which is what a check in CI runs.
+The route claims `tribunal-example.variance-authority.dev` as a custom domain.
+That address is then what `variance push` has to be given, and `review.endpoint`
+in `variance.config.json` is a literal — the local port above, because the local
+flow is what this page walks through. A deployment is one edit:
+
+```json
+"review": {
+  "endpoint": "https://tribunal-example.variance-authority.dev",
+  "token": { "env": "VARIANCE_INGEST_TOKEN" }
+}
+```
+
+The token stays where it is. Only the endpoint moves, and only the ingest token
+travels with it — the review token is what a person decides with and never
+reaches CI.
+
+`npm run deploy -- --dry-run` builds the Worker and resolves the bindings
+without an account, so it is a check CI can run on every commit.
 
 ## What is in here
 

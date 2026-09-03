@@ -90,8 +90,8 @@ run(
     'storybook@^9.1.13',
     '@storybook/nextjs-vite@^9.1.13',
     'vite@^6.0.0',
-    '@variance-authority/jsx-source@^0.1.0',
-    '@variance-authority/sense@^0.1.0',
+    '@variance-authority/jsx-source@^0.1.1',
+    '@variance-authority/sense@^0.1.1',
   ],
   app,
 );
