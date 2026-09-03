@@ -183,27 +183,34 @@ That directory is generated and is not committed.
 routes, migrations, the bundle — comes from `node_modules`, so an upgrade is
 `npm install` and there is no vendored copy here to drift from the release.
 
-Three account-scoped resources are created once. The `d1 create` line prints an
-id; it belongs in `deploy/wrangler.jsonc` and is not a secret.
+The account side is one command, and it is idempotent — run it again to check:
 
 ```bash
-npx wrangler d1 create variance-tribunal-example
-npx wrangler r2 bucket create variance-tribunal-example
-npm run deploy:migrate
+npm run provision
 ```
 
-The tokens are the only values that must never be in the file:
+`deploy/provision.mjs` creates the D1 database if it is missing, writes the id
+it prints into `deploy/wrangler.jsonc`, creates the R2 bucket, applies the
+migrations the installed package ships, and generates the two tokens straight
+into the deployment. That last step is why this is a script rather than a list:
+the token has to be made and handed to `wrangler` without a person retyping it,
+and printed exactly once, because nothing can read it back afterwards. Save the
+two lines it prints. `--rotate` replaces tokens that already exist.
 
 ```bash
-npx wrangler secret put INGEST_TOKEN --config deploy/wrangler.jsonc
-npx wrangler secret put REVIEW_TOKEN --config deploy/wrangler.jsonc
 npm run deploy
 ```
 
-The route claims `tribunal-example.variance-authority.dev` as a custom domain.
-That address is then what `variance push` has to be given, and `review.endpoint`
-in `variance.config.json` is a literal — the local port above, because the local
-flow is what this page walks through. A deployment is one edit:
+A custom domain is not part of that. The zone has to already be in the same
+Cloudflare account — being on Cloudflare nameservers is not enough, and moving
+a zone means changing nameservers at the registrar. So `workers_dev` is on and
+the deployment always has an address that works; `routes` sits commented out in
+`deploy/wrangler.jsonc` and is uncommented once the zone is in place.
+
+Whichever address it has is then what `variance push` has to be given, and
+`review.endpoint` in `variance.config.json` is a literal — the local port above,
+because the local flow is what this page walks through. A deployment is one
+edit:
 
 ```json
 "review": {
@@ -227,6 +234,7 @@ without an account, so it is a check CI can run on every commit.
     variance/collector.mjs   both shipped collectors behind one `kind: "collector"`
     deploy/wrangler.jsonc    the same surface as a Worker, over D1 and R2
     deploy/worker.mjs        who may read and who may decide, argued at the routes
+    deploy/provision.mjs     the account side — database, bucket, schema, tokens
     deploy/assets.mjs        the review bundle, copied out of the installed package
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
