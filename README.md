@@ -150,10 +150,40 @@ VARIANCE_INGEST_TOKEN=… npm run push -- --run 2 --commit "$(git -C app rev-par
 The build page is then at the tribunal's address. `npm run revise -- --undo`
 puts the shop back.
 
+## The same surface, deployed
+
+`deploy/wrangler.jsonc` is the process above as a Worker: D1 for rows, R2 for
+bytes, and the same two tokens. `main` points into `node_modules` — the Worker
+is the one the package publishes, so an upgrade is `npm install` and there is
+no vendored copy here to drift from the release.
+
+Three account-scoped resources are created once. The `d1 create` line prints an
+id; it belongs in `deploy/wrangler.jsonc` and is not a secret.
+
+```bash
+npx wrangler d1 create variance-tribunal-example
+npx wrangler r2 bucket create variance-tribunal-example
+npm run deploy:migrate
+```
+
+The tokens are the only values that must never be in the file:
+
+```bash
+npx wrangler secret put INGEST_TOKEN --config deploy/wrangler.jsonc
+npx wrangler secret put REVIEW_TOKEN --config deploy/wrangler.jsonc
+npm run deploy
+```
+
+The route claims `tribunal-example.variance-authority.dev` as a custom domain,
+so that address is what `review.endpoint` is set to and what `variance push`
+writes to. `npm run deploy -- --dry-run` builds and resolves the bindings
+without an account, which is what a check in CI runs.
+
 ## What is in here
 
     variance.config.json     one run, two surfaces, the axis vocabulary, the file graph
     variance/collector.mjs   both shipped collectors behind one `kind: "collector"`
+    deploy/wrangler.jsonc    the same surface as a Worker, over D1 and R2
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
     scripts/revise.mjs       the change under review, committed so `--against` has a ref

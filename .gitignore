@@ -6,3 +6,4 @@ variance-tribunal.db*
 variance-tribunal-objects/
 *.log
 .DS_Store
+.wrangler/

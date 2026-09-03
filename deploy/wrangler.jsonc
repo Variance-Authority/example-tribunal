@@ -1,0 +1,51 @@
+{
+  // The deployment of this example's review surface, at
+  // `tribunal-example.variance-authority.dev`.
+  //
+  // `main` and `migrations_dir` point into `node_modules`: the Worker is the one
+  // `@variance-authority/tribunal` publishes, not a copy of it. An adopter's
+  // deployment is a manifest and this file, and a package upgrade is `npm
+  // install` — there is no vendored entry point here to drift from the release.
+  "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
+  "name": "tribunal-example",
+  "main": "../node_modules/@variance-authority/tribunal/dist/worker-entry.js",
+  "compatibility_date": "2026-08-05",
+
+  // Rows. `database_id` is what `wrangler d1 create variance-tribunal-example`
+  // prints; it is an account-scoped identifier, not a secret.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "variance-tribunal-example",
+      "database_id": "PLACEHOLDER — replace with the id `wrangler d1 create` prints",
+      "migrations_dir": "../node_modules/@variance-authority/tribunal/migrations"
+    }
+  ],
+
+  // Bytes: baseline and candidate images.
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "variance-tribunal-example"
+    }
+  ],
+
+  // The subject of this example is snkr-shop, and the token establishes nothing
+  // yet, so the project is a deployment setting.
+  "vars": {
+    "PROJECT": "snkr-shop"
+  },
+
+  // The Worker answers on the subdomain rather than on `workers.dev`, so the
+  // address in the README is the address `variance push` is given.
+  "routes": [
+    {
+      "pattern": "tribunal-example.variance-authority.dev",
+      "custom_domain": true
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}
