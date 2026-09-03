@@ -7,3 +7,5 @@ variance-tribunal-objects/
 *.log
 .DS_Store
 .wrangler/
+deploy/public/
+deploy/.dev.vars

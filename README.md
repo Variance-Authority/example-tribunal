@@ -153,9 +153,35 @@ puts the shop back.
 ## The same surface, deployed
 
 `deploy/wrangler.jsonc` is the process above as a Worker: D1 for rows, R2 for
-bytes, and the same two tokens. `main` points into `node_modules` — the Worker
-is the one the package publishes, so an upgrade is `npm install` and there is
-no vendored copy here to drift from the release.
+bytes, and the same two tokens.
+
+The Worker the package publishes serves the JSON API and no HTML. That is a
+position, not an omission: the review page carries no token, so whoever serves
+it is the gate, and `createTribunalRoutes` takes an `authorize` with no default
+because a package that defaulted it would be shipping an approve button to the
+internet. `deploy/worker.mjs` is where this example answers that question, in
+about forty lines over the published routes:
+
+**Reads are open. Every write needs a token.** The subject here is a public
+storefront rendered from a pinned public commit — its diffs are nobody's
+secret, and a build page nobody can open demonstrates nothing. So a `GET` is
+granted the review capability with no credential, and anybody may read the
+docket, the regions and the three PNGs. A write is not a read: deciding a
+subject promotes a baseline, sweeping deletes builds, ingesting writes them, so
+every non-`GET` must present the ingest or the review token and is refused with
+a sentence without it. The tokens are compared in the wrapper and the header is
+then *replaced* before the routes see it, which is what stops a caller choosing
+its own capability by sending its own bearer.
+
+The page itself is one document served at every page route, over the same
+`REVIEW_STYLES` the node binary uses rather than a copy of them. Its script is
+a static asset: `deploy/assets.mjs` copies the bundle out of the installed
+package into `deploy/public/ui/review.js`, which `npm run deploy` does for you.
+That directory is generated and is not committed.
+
+`main` is the only file in this repo that is Worker code; everything under it —
+routes, migrations, the bundle — comes from `node_modules`, so an upgrade is
+`npm install` and there is no vendored copy here to drift from the release.
 
 Three account-scoped resources are created once. The `d1 create` line prints an
 id; it belongs in `deploy/wrangler.jsonc` and is not a secret.
@@ -188,7 +214,9 @@ flow is what this page walks through. A deployment is one edit:
 
 The token stays where it is. Only the endpoint moves, and only the ingest token
 travels with it — the review token is what a person decides with and never
-reaches CI.
+reaches CI, and on this deployment it is the whole difference between reading a
+build and deciding one. `REVIEWER` is an optional plain variable naming who the
+page files decisions under.
 
 `npm run deploy -- --dry-run` builds the Worker and resolves the bindings
 without an account, so it is a check CI can run on every commit.
@@ -198,6 +226,8 @@ without an account, so it is a check CI can run on every commit.
     variance.config.json     one run, two surfaces, the axis vocabulary, the file graph
     variance/collector.mjs   both shipped collectors behind one `kind: "collector"`
     deploy/wrangler.jsonc    the same surface as a Worker, over D1 and R2
+    deploy/worker.mjs        who may read and who may decide, argued at the routes
+    deploy/assets.mjs        the review bundle, copied out of the installed package
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
     scripts/revise.mjs       the change under review, committed so `--against` has a ref

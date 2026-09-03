@@ -13,7 +13,8 @@
     "handler": "node scripts/handler.mjs",
     "variance": "variance",
     "tribunal": "variance-authority-tribunal",
-    "deploy": "wrangler deploy --config deploy/wrangler.jsonc",
+    "deploy:assets": "node deploy/assets.mjs",
+    "deploy": "npm run deploy:assets && wrangler deploy --config deploy/wrangler.jsonc",
     "deploy:migrate": "wrangler d1 migrations apply variance-tribunal-example --remote --config deploy/wrangler.jsonc",
     "push": "variance push"
   },
