@@ -14,8 +14,12 @@
 
   // The account holding `variance-authority.dev`. Named here rather than left to
   // wrangler, which only picks an account by itself when exactly one is
-  // available: a login with three of them prompts interactively and fails
+  // available: a login with several of them prompts interactively and fails
   // outright in CI. Account-scoped and not a secret, same as `database_id`.
+  //
+  // Not every command reads it. `r2 bucket list` asks the account question on
+  // its own and does not consult this file, which is why `provision.mjs` also
+  // exports it as `CLOUDFLARE_ACCOUNT_ID`.
   "account_id": "6dcc9521c43dfae93157e550f4d7aab3",
 
   // Rows. `database_id` is what `wrangler d1 create variance-tribunal-example`
@@ -24,7 +28,7 @@
     {
       "binding": "DB",
       "database_name": "variance-tribunal-example",
-      "database_id": "0ad2a7eb-9a40-41f8-ac4a-6566f6489aae",
+      "database_id": "ac11a34c-5474-4119-96a0-d095ed253f9d",
       "migrations_dir": "../node_modules/@variance-authority/tribunal/migrations"
     }
   ],

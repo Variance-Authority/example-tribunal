@@ -32,17 +32,28 @@ const rotate = process.argv.includes('--rotate');
 const made = [];
 
 /**
- * Every invocation carries `--config`, including the ones that look account-wide
- * like `d1 list`. That file is where `account_id` is written, and a login with
- * more than one account picks a different one without it — so an omitted
- * `--config` here would create the database in whichever account wrangler
- * guessed and then report success.
+ * The account, twice.
  *
- * `stdio: inherit` on stderr so wrangler's own diagnosis reaches the operator.
+ * `--config` names it because that file carries `account_id`, and most commands
+ * read it there. `r2 bucket list` does not: it asks the account question on its
+ * own, sees more than one, and fails with "Please set the appropriate
+ * `account_id` in your Wrangler configuration file" while looking straight at a
+ * configuration file that sets it. So the same value also goes into the
+ * environment, where every command honours it.
+ *
+ * Taken from the config rather than hardcoded, so there is still one place that
+ * decides which account this deployment lives in.
  */
+const account = /"account_id":\s*"([^"]+)"/.exec(readFileSync(CONFIG, 'utf8'));
+if (account === null) throw new Error(`no "account_id" in ${CONFIG} — provisioning cannot pick an account for you`);
+
+const environment = { ...process.env, CLOUDFLARE_ACCOUNT_ID: account[1] };
+
+/** `stdio: inherit` on stderr so wrangler's own diagnosis reaches the operator. */
 function wrangler(args, { capture = true } = {}) {
   return execFileSync('npx', ['wrangler', ...args, '--config', CONFIG], {
     encoding: 'utf8',
+    env: environment,
     stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit',
   });
 }
@@ -55,7 +66,10 @@ function say(line) {
 //    which is what makes a second run cost nothing.
 let database = JSON.parse(wrangler(['d1', 'list', '--json'])).find((one) => one.name === DATABASE);
 if (database === undefined) {
-  wrangler(['d1', 'create', DATABASE], { capture: false });
+  // `--no-update-config` because wrangler's own rewrite reformats the whole
+  // file and appends a second binding beside the one already there. Step 2
+  // writes the id, and keeps every comment.
+  wrangler(['d1', 'create', DATABASE, '--no-update-config'], { capture: false });
   database = JSON.parse(wrangler(['d1', 'list', '--json'])).find((one) => one.name === DATABASE);
   if (database === undefined) throw new Error(`created ${DATABASE} and then could not find it`);
   made.push(`D1 database ${DATABASE}`);
@@ -78,7 +92,26 @@ if (currently[1] !== database.uuid) {
 
 // 3. The bucket. `r2 bucket list` has no JSON mode, and its output is a block
 //    of `key: value` lines per bucket.
-const buckets = wrangler(['r2', 'bucket', 'list'])
+//
+//    R2 is off until somebody turns it on in the dashboard — the API answers
+//    10042 and there is no wrangler command that agrees to it, because agreeing
+//    to it is signing up for storage billing. So this stops with the sentence
+//    that says where to click rather than with a stack trace.
+let listing;
+try {
+  listing = wrangler(['r2', 'bucket', 'list']);
+} catch {
+  say('');
+  say('R2 is not enabled on this account. Nothing here can enable it for you: it is');
+  say('an agreement to a storage plan, made once, in the dashboard —');
+  say('');
+  say(`  https://dash.cloudflare.com/${account[1]}/r2`);
+  say('');
+  say('Click through it, then run this command again. Everything above is already done.');
+  process.exit(1);
+}
+
+const buckets = listing
   .split('\n')
   .flatMap((line) => (line.startsWith('name:') ? [line.slice(5).trim()] : []));
 if (buckets.includes(BUCKET)) {
@@ -98,22 +131,35 @@ wrangler(['d1', 'migrations', 'apply', DATABASE, '--remote'], { capture: false }
 // 5. The tokens. These are the reason this file exists: the value has to be
 //    generated and handed to `wrangler` without a human retyping it, and it has
 //    to be printed exactly once, because nothing can read it back afterwards.
-const existing = new Set(
-  JSON.parse(wrangler(['secret', 'list'])).map((secret) => secret.name),
-);
+//
+//    Secrets belong to a Worker, and a Worker does not exist until it has been
+//    deployed once. So on a fresh account this step has nothing to attach to —
+//    which is fine, because a Worker with no tokens is exactly a deployment that
+//    refuses every write. Deploy, run this again, and the tokens land.
+let deployed = true;
+let existing = new Set();
+try {
+  existing = new Set(JSON.parse(wrangler(['secret', 'list'])).map((secret) => secret.name));
+} catch {
+  deployed = false;
+}
+
 const minted = [];
-for (const name of ['INGEST_TOKEN', 'REVIEW_TOKEN']) {
-  if (existing.has(name) && !rotate) {
-    say(`${name} is already set — pass --rotate to replace it`);
-    continue;
+if (deployed) {
+  for (const name of ['INGEST_TOKEN', 'REVIEW_TOKEN']) {
+    if (existing.has(name) && !rotate) {
+      say(`${name} is already set — pass --rotate to replace it`);
+      continue;
+    }
+    const token = randomBytes(24).toString('hex');
+    execFileSync('npx', ['wrangler', 'secret', 'put', name, '--config', CONFIG], {
+      input: token,
+      env: environment,
+      stdio: ['pipe', 'ignore', 'inherit'],
+    });
+    minted.push([name, token]);
+    made.push(name);
   }
-  const token = randomBytes(24).toString('hex');
-  execFileSync('npx', ['wrangler', 'secret', 'put', name, '--config', CONFIG], {
-    input: token,
-    stdio: ['pipe', 'ignore', 'inherit'],
-  });
-  minted.push([name, token]);
-  made.push(name);
 }
 
 if (minted.length > 0) {
@@ -140,4 +186,10 @@ if (/^\s*"routes"/m.test(readFileSync(CONFIG, 'utf8'))) {
 
 say('');
 say(made.length === 0 ? 'Nothing to do — already provisioned.' : `Provisioned: ${made.join(', ')}.`);
-say('Next: npm run deploy');
+if (deployed) {
+  say('Next: npm run deploy');
+} else {
+  say('');
+  say('The Worker has never been deployed, so there was nothing to hold the tokens.');
+  say('Next: npm run deploy, then this command again — that run mints them.');
+}

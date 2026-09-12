@@ -197,6 +197,13 @@ the token has to be made and handed to `wrangler` without a person retyping it,
 and printed exactly once, because nothing can read it back afterwards. Save the
 two lines it prints. `--rotate` replaces tokens that already exist.
 
+Two things it cannot do for you, and says so when it reaches them. R2 is off on
+a new account until somebody agrees to a storage plan in the dashboard, which
+is a decision and not a command. And secrets belong to a Worker, so the first
+run on a fresh account has nothing to attach them to — deploy once, run
+`npm run provision` again, and that run mints them. A Worker with no tokens is
+already coherent: it is a deployment that refuses every write.
+
 ```bash
 npm run deploy
 ```
