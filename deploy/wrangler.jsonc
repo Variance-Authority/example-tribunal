@@ -12,6 +12,12 @@
   "main": "worker.mjs",
   "compatibility_date": "2026-08-05",
 
+  // The account holding `variance-authority.dev`. Named here rather than left to
+  // wrangler, which only picks an account by itself when exactly one is
+  // available: a login with three of them prompts interactively and fails
+  // outright in CI. Account-scoped and not a secret, same as `database_id`.
+  "account_id": "6dcc9521c43dfae93157e550f4d7aab3",
+
   // Rows. `database_id` is what `wrangler d1 create variance-tribunal-example`
   // prints; it is an account-scoped identifier, not a secret.
   "d1_databases": [
@@ -45,19 +51,18 @@
     "PROJECT": "snkr-shop"
   },
 
-  // A deploy cannot create a custom domain. The zone has to already be in the
-  // same Cloudflare account, and moving a zone there means changing nameservers
-  // at the registrar — minutes of DNS, not a command. So the Worker takes its
-  // `workers.dev` address unconditionally, which means a deployment always has
-  // a URL that works, and the domain below is uncommented once the zone is in
-  // the account. `deploy/provision.mjs` reports which of the two you have.
+  // A deploy cannot create a custom domain: the zone has to already be in the
+  // account named above, because being on Cloudflare nameservers is not the
+  // same as being reachable by this login. `workers.dev` stays on beside it so
+  // the deployment has a second address that never depends on DNS — useful the
+  // first time, and useful again the day the domain is the thing that broke.
   "workers_dev": true,
-  // "routes": [
-  //   {
-  //     "pattern": "tribunal-example.variance-authority.dev",
-  //     "custom_domain": true
-  //   }
-  // ],
+  "routes": [
+    {
+      "pattern": "tribunal-example.variance-authority.dev",
+      "custom_domain": true
+    }
+  ],
 
   "observability": {
     "enabled": true

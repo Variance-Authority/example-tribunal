@@ -31,9 +31,17 @@ const BUCKET = 'variance-tribunal-example';
 const rotate = process.argv.includes('--rotate');
 const made = [];
 
-/** `stdio: inherit` on stderr so wrangler's own diagnosis reaches the operator. */
+/**
+ * Every invocation carries `--config`, including the ones that look account-wide
+ * like `d1 list`. That file is where `account_id` is written, and a login with
+ * more than one account picks a different one without it — so an omitted
+ * `--config` here would create the database in whichever account wrangler
+ * guessed and then report success.
+ *
+ * `stdio: inherit` on stderr so wrangler's own diagnosis reaches the operator.
+ */
 function wrangler(args, { capture = true } = {}) {
-  return execFileSync('npx', ['wrangler', ...args], {
+  return execFileSync('npx', ['wrangler', ...args, '--config', CONFIG], {
     encoding: 'utf8',
     stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit',
   });
@@ -85,13 +93,13 @@ if (buckets.includes(BUCKET)) {
 //    `d1_migrations` table says is missing and nothing else — so this runs
 //    every time and is also how an upgrade lands.
 say('applying migrations');
-wrangler(['d1', 'migrations', 'apply', DATABASE, '--remote', '--config', CONFIG], { capture: false });
+wrangler(['d1', 'migrations', 'apply', DATABASE, '--remote'], { capture: false });
 
 // 5. The tokens. These are the reason this file exists: the value has to be
 //    generated and handed to `wrangler` without a human retyping it, and it has
 //    to be printed exactly once, because nothing can read it back afterwards.
 const existing = new Set(
-  JSON.parse(wrangler(['secret', 'list', '--config', CONFIG])).map((secret) => secret.name),
+  JSON.parse(wrangler(['secret', 'list'])).map((secret) => secret.name),
 );
 const minted = [];
 for (const name of ['INGEST_TOKEN', 'REVIEW_TOKEN']) {

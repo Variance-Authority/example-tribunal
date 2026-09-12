@@ -201,11 +201,12 @@ two lines it prints. `--rotate` replaces tokens that already exist.
 npm run deploy
 ```
 
-A custom domain is not part of that. The zone has to already be in the same
-Cloudflare account — being on Cloudflare nameservers is not enough, and moving
-a zone means changing nameservers at the registrar. So `workers_dev` is on and
-the deployment always has an address that works; `routes` sits commented out in
-`deploy/wrangler.jsonc` and is uncommented once the zone is in place.
+A custom domain is not something a deploy can create. The zone has to already be
+in the account `deploy/wrangler.jsonc` names — a login with several accounts
+picks a different one without `account_id`, and sitting on Cloudflare
+nameservers is not the same as being reachable by this login. `workers_dev`
+stays on beside the domain, so the deployment has a second address that never
+depends on DNS.
 
 Whichever address it has is then what `variance push` has to be given, and
 `review.endpoint` in `variance.config.json` is a literal — the local port above,
