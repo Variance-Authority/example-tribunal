@@ -215,23 +215,24 @@ nameservers is not the same as being reachable by this login. `workers_dev`
 stays on beside the domain, so the deployment has a second address that never
 depends on DNS.
 
-Whichever address it has is then what `variance push` has to be given, and
+Whichever address it has is then what `variance push` records against, and
 `review.endpoint` in `variance.config.json` is a literal — the local port above,
-because the local flow is what this page walks through. A deployment is one
-edit:
+because the local flow is what this page walks through, and it should keep
+pointing there. So the deployment gets that one edit in a copy:
 
-```json
-"review": {
-  "endpoint": "https://tribunal-example.variance-authority.dev",
-  "token": { "env": "VARIANCE_INGEST_TOKEN" }
-}
+```bash
+VARIANCE_INGEST_TOKEN=… npm run deploy:push
 ```
 
-The token stays where it is. Only the endpoint moves, and only the ingest token
-travels with it — the review token is what a person decides with and never
-reaches CI, and on this deployment it is the whole difference between reading a
-build and deciding one. `REVIEWER` is an optional plain variable naming who the
-page files decisions under.
+`deploy/push.mjs` reads the address out of `deploy/wrangler.jsonc` — the custom
+domain if one is claimed there, or an argument, which is what you want on the
+day DNS has not finished propagating. It writes the copy beside the original so
+every relative path in it still resolves, and does not commit it.
+
+Only the endpoint moves, and only the ingest token travels with it. The review
+token is what a person decides with, never reaches CI, and on this deployment it
+is the whole difference between reading a build and deciding one. `REVIEWER` is
+an optional plain variable naming who the page files decisions under.
 
 `npm run deploy -- --dry-run` builds the Worker and resolves the bindings
 without an account, so it is a check CI can run on every commit.
@@ -244,6 +245,7 @@ without an account, so it is a check CI can run on every commit.
     deploy/worker.mjs        who may read and who may decide, argued at the routes
     deploy/provision.mjs     the account side — database, bucket, schema, tokens
     deploy/assets.mjs        the review bundle, copied out of the installed package
+    deploy/push.mjs          the one edit that records a run against the deployment
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
     scripts/revise.mjs       the change under review, committed so `--against` has a ref

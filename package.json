@@ -16,6 +16,7 @@
     "provision": "node deploy/provision.mjs",
     "deploy:assets": "node deploy/assets.mjs",
     "deploy": "npm run deploy:assets && wrangler deploy --config deploy/wrangler.jsonc",
+    "deploy:push": "node deploy/push.mjs",
     "push": "variance push"
   },
   "devDependencies": {

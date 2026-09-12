@@ -9,3 +9,4 @@ variance-tribunal-objects/
 .wrangler/
 deploy/public/
 deploy/.dev.vars
+variance.config.deploy.json

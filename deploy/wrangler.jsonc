@@ -1,74 +1,71 @@
 {
-  // The deployment of this example's review surface, at
-  // `tribunal-example.variance-authority.dev`.
-  //
-  // `main` is `worker.mjs` here rather than the package's own `worker-entry`,
-  // because that entry serves the JSON API and no HTML — deliberately, and
-  // `worker.mjs` says why at the top. It imports the published Worker rather
-  // than copying it, and `migrations_dir` points straight into the package, so
-  // an upgrade is still `npm install` and nothing here drifts from the release.
-  "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
-  "name": "tribunal-example",
-  "main": "worker.mjs",
-  "compatibility_date": "2026-08-05",
-
-  // The account holding `variance-authority.dev`. Named here rather than left to
-  // wrangler, which only picks an account by itself when exactly one is
-  // available: a login with several of them prompts interactively and fails
-  // outright in CI. Account-scoped and not a secret, same as `database_id`.
-  //
-  // Not every command reads it. `r2 bucket list` asks the account question on
-  // its own and does not consult this file, which is why `provision.mjs` also
-  // exports it as `CLOUDFLARE_ACCOUNT_ID`.
-  "account_id": "6dcc9521c43dfae93157e550f4d7aab3",
-
-  // Rows. `database_id` is what `wrangler d1 create variance-tribunal-example`
-  // prints; it is an account-scoped identifier, not a secret.
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "variance-tribunal-example",
-      "database_id": "ac11a34c-5474-4119-96a0-d095ed253f9d",
-      "migrations_dir": "../node_modules/@variance-authority/tribunal/migrations"
-    }
-  ],
-
-  // The review bundle, written into `public/` by `assets.mjs` before every
-  // deploy and never committed. Assets are matched ahead of the Worker, so
-  // `/ui/review.js` is a file to the browser and `worker.mjs` never sees the
-  // request; everything that does not match falls through to it.
-  "assets": {
-    "directory": "./public"
-  },
-
-  // Bytes: baseline and candidate images.
-  "r2_buckets": [
-    {
-      "binding": "BUCKET",
-      "bucket_name": "variance-tribunal-example"
-    }
-  ],
-
-  // The subject of this example is snkr-shop, and the token establishes nothing
-  // yet, so the project is a deployment setting.
-  "vars": {
-    "PROJECT": "snkr-shop"
-  },
-
-  // A deploy cannot create a custom domain: the zone has to already be in the
-  // account named above, because being on Cloudflare nameservers is not the
-  // same as being reachable by this login. `workers.dev` stays on beside it so
-  // the deployment has a second address that never depends on DNS — useful the
-  // first time, and useful again the day the domain is the thing that broke.
-  "workers_dev": true,
-  "routes": [
-    {
-      "pattern": "tribunal-example.variance-authority.dev",
-      "custom_domain": true
-    }
-  ],
-
-  "observability": {
-    "enabled": true
-  }
+	// The deployment of this example's review surface, at
+	// `tribunal-example.variance-authority.dev`.
+	//
+	// `main` is `worker.mjs` here rather than the package's own `worker-entry`,
+	// because that entry serves the JSON API and no HTML — deliberately, and
+	// `worker.mjs` says why at the top. It imports the published Worker rather
+	// than copying it, and `migrations_dir` points straight into the package, so
+	// an upgrade is still `npm install` and nothing here drifts from the release.
+	"$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
+	"name": "tribunal-example",
+	"main": "worker.mjs",
+	"compatibility_date": "2026-08-05",
+	// The account holding `variance-authority.dev`. Named here rather than left to
+	// wrangler, which only picks an account by itself when exactly one is
+	// available: a login with several of them prompts interactively and fails
+	// outright in CI. Account-scoped and not a secret, same as `database_id`.
+	//
+	// Not every command reads it. `r2 bucket list` asks the account question on
+	// its own and does not consult this file, which is why `provision.mjs` also
+	// exports it as `CLOUDFLARE_ACCOUNT_ID`.
+	"account_id": "6dcc9521c43dfae93157e550f4d7aab3",
+	// Rows. `database_id` is what `wrangler d1 create variance-tribunal-example`
+	// prints; it is an account-scoped identifier, not a secret.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "variance-tribunal-example",
+			"database_id": "ac11a34c-5474-4119-96a0-d095ed253f9d",
+			"migrations_dir": "../node_modules/@variance-authority/tribunal/migrations"
+		}
+	],
+	// The review bundle, written into `public/` by `assets.mjs` before every
+	// deploy and never committed. Assets are matched ahead of the Worker, so
+	// `/ui/review.js` is a file to the browser and `worker.mjs` never sees the
+	// request; everything that does not match falls through to it.
+	"assets": {
+		"directory": "./public"
+	},
+	// Bytes: baseline and candidate images.
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "variance-tribunal-example"
+		},
+		{
+			"bucket_name": "variance-tribunal-example",
+			"binding": "variance_tribunal_example"
+		}
+	],
+	// The subject of this example is snkr-shop, and the token establishes nothing
+	// yet, so the project is a deployment setting.
+	"vars": {
+		"PROJECT": "snkr-shop"
+	},
+	// A deploy cannot create a custom domain: the zone has to already be in the
+	// account named above, because being on Cloudflare nameservers is not the
+	// same as being reachable by this login. `workers.dev` stays on beside it so
+	// the deployment has a second address that never depends on DNS — useful the
+	// first time, and useful again the day the domain is the thing that broke.
+	"workers_dev": true,
+	"routes": [
+		{
+			"pattern": "tribunal-example.variance-authority.dev",
+			"custom_domain": true
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
 }
