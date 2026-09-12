@@ -21,6 +21,21 @@
  *
  * The ingest token is the only one that belongs here. The review token decides
  * subjects, and a machine that records builds has no business deciding them.
+ *
+ * ## The build is the commit
+ *
+ * `variance push` takes the operator's own id for the run, because in CI that is
+ * a job number that a re-run reuses. This example has no CI and no job number,
+ * and the run it pushes is the one that read this commit — so the commit is the
+ * id. An id taken from the clock instead would file a second build every time
+ * the same report was sent, which is the failure `push.ts` names from the other
+ * side: six dockets over six sixths of one commit's subjects. One commit, one
+ * build.
+ *
+ * That also makes a second push a correction rather than a duplicate. The
+ * deployment clears a build's rows before it rewrites them and keeps the
+ * decisions, so re-pushing a report that was produced by a fixed tool replaces
+ * the analysis without taking anybody's name off what they approved.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -58,6 +73,8 @@ writeFileSync(COPY, `${JSON.stringify(configuration, null, 2)}\n`);
 /** A build with no commit is a build nothing can be compared against later. */
 const git = (args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 
+const commit = git(['rev-parse', 'HEAD']);
+
 process.stdout.write(`pushing to ${endpoint}\n`);
 
 /**
@@ -74,9 +91,9 @@ try {
       '--config',
       COPY,
       '--run',
-      `deploy-${Date.now().toString(36)}`,
+      commit.slice(0, 12),
       '--commit',
-      git(['rev-parse', 'HEAD']),
+      commit,
       '--branch',
       git(['rev-parse', '--abbrev-ref', 'HEAD']),
     ],
