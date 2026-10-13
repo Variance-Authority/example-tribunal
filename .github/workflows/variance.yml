@@ -1,0 +1,105 @@
+name: variance
+
+# The shop, built and read on every pull request, and every build pushed to the
+# deployment at tribunal-example.variance-authority.dev.
+#
+# The deployment owns the baselines and the review. A person approves or rejects
+# each subject on the build page, then re-runs this check, which compares
+# against what they approved. Nothing is committed and no label accepts.
+#
+# The variance-authority repository opens a pull request here every week that
+# changes one product card's story, watches the check go red, approves the
+# change through the deployment's API, re-runs the check, and closes the pull
+# request without merging. That is its end-to-end test of the tribunal review
+# flow.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  VARIANCE_REVIEW: tribunal
+  VARIANCE_TRIBUNAL: https://tribunal-example.variance-authority.dev
+  # The deployment's ingest token: it reads the baselines and records the build.
+  # The review token decides subjects and never reaches this workflow.
+  VARIANCE_INGEST_TOKEN: ${{ secrets.VARIANCE_INGEST_TOKEN }}
+
+jobs:
+  variance:
+    concurrency:
+      group: variance-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    # The image's Chromium is the one the deployment's baselines were painted
+    # in. It matches the `playwright` pinned in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+
+      # Before ten minutes of building: every step after this one needs it.
+      - name: check the ingest token is set
+        run: |
+          if [ -z "$VARIANCE_INGEST_TOKEN" ]; then
+            echo "::error::VARIANCE_INGEST_TOKEN is not set. It is the INGEST_TOKEN that 'npm run provision' printed for $VARIANCE_TRIBUNAL; save it as a repository secret."
+            exit 2
+          fi
+
+      - run: npm ci
+      - run: npm run app:fetch
+      - run: npm run app:build
+
+      - name: serve the shop on :3100
+        run: |
+          npm run app:serve > "$RUNNER_TEMP/serve.log" 2>&1 &
+          node -e "
+            const until = Date.now() + 120000;
+            const wait = async () => {
+              try { if ((await fetch('http://localhost:3100/')).ok) return; } catch {}
+              if (Date.now() > until) { console.error('the shop did not answer on :3100 within two minutes'); process.exit(1); }
+              setTimeout(wait, 1000);
+            };
+            wait();
+          " || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
+
+      # `variance.config.json` is the local flow the README walks through, so
+      # the deployment gets its two edits in a copy beside it: the baselines are
+      # read from the deployment, and the build is recorded there.
+      - name: point the run at the deployment
+        run: |
+          node --input-type=module -e "
+            import { readFileSync, writeFileSync } from 'node:fs';
+            const config = JSON.parse(readFileSync('variance.config.json', 'utf8'));
+            const endpoint = process.env.VARIANCE_TRIBUNAL;
+            config.baselines = { kind: 'remote', endpoint, token: { env: 'VARIANCE_INGEST_TOKEN' } };
+            config.review = { ...config.review, endpoint };
+            writeFileSync('variance.config.deploy.json', JSON.stringify(config, null, 2) + '\n');
+          "
+
+      # Pinned to the commit tagged `@variance-authority/cli@0.15.0`, the CLI
+      # version package.json installs.
+      - id: variance
+        uses: Variance-Authority/variance-authority/.github/actions/variance@6f680bb9196af71967574c89c23ad9e48348ee7e
+        with:
+          config: variance.config.deploy.json
+          comment: ${{ github.event_name == 'pull_request' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          to-accept: 'approve or reject each subject on the review service, then re-run this check.'
+
+      # Red or green, the build goes to the deployment: a red one is what a
+      # person decides on there, and a green one is history. Not after exit 2,
+      # which wrote no report worth deciding on.
+      - name: put the build in front of a reviewer
+        if: >-
+          !cancelled() &&
+          (steps.variance.outputs.exit-code == '0' || steps.variance.outputs.exit-code == '1')
+        env:
+          VARIANCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: npx --no-install variance push --config variance.config.deploy.json --branch "$VARIANCE_BRANCH"

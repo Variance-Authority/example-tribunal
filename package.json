@@ -20,12 +20,12 @@
     "push": "variance push"
   },
   "devDependencies": {
-    "@variance-authority/cli": "^0.1.1",
-    "@variance-authority/route-collector": "^0.1.1",
-    "@variance-authority/storybook": "^0.1.1",
-    "@variance-authority/storybook-collector": "^0.1.1",
-    "@variance-authority/tribunal": "^0.1.1",
-    "playwright": "^1.49.0",
+    "@variance-authority/cli": "^0.15.0",
+    "@variance-authority/route-collector": "^0.15.0",
+    "@variance-authority/storybook": "^0.15.0",
+    "@variance-authority/storybook-collector": "^0.15.0",
+    "@variance-authority/tribunal": "^0.15.0",
+    "playwright": "1.64.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "wrangler": "^4.128.0"

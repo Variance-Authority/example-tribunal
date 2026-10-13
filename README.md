@@ -237,6 +237,23 @@ an optional plain variable naming who the page files decisions under.
 `npm run deploy -- --dry-run` builds the Worker and resolves the bindings
 without an account, so it is a check CI can run on every commit.
 
+## On a pull request
+
+[`.github/workflows/variance.yml`](.github/workflows/variance.yml) builds the
+shop on every pull request, reads it against the deployment's baselines, and
+pushes the build there whatever the verdict. The comment on the pull request
+says what changed; the build page is where you decide. Approve every changed
+subject, re-run the check, and it compares against what you approved.
+
+The workflow carries the ingest token as the `VARIANCE_INGEST_TOKEN` secret and
+stops at its first step without it. The review token never reaches this
+repository's CI.
+
+Every week the variance-authority repository opens a pull request here that
+changes the product the card stories render. It checks that the check goes red,
+approves the change through the deployment's API with the review token it holds,
+re-runs the check, and closes the pull request without merging.
+
 ## What is in here
 
     variance.config.json     one run, two surfaces, the axis vocabulary, the file graph
@@ -246,6 +263,7 @@ without an account, so it is a check CI can run on every commit.
     deploy/provision.mjs     the account side — database, bucket, schema, tokens
     deploy/assets.mjs        the review bundle, copied out of the installed package
     deploy/push.mjs          the one edit that records a run against the deployment
+    .github/workflows/       the same run on every pull request, recorded against the deployment
     overlay/                 what an adopter commits: stories, a preview, two settings
     scripts/prepare.mjs      clone, pin, overlay — every edit argued at the edit
     scripts/revise.mjs       the change under review, committed so `--against` has a ref
