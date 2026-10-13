@@ -18,6 +18,15 @@ on:
     branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
+  # The one accept this workflow makes: a dispatch with `accept` ticked writes
+  # what it renders through to the deployment, which is how a renderer the
+  # deployment has never seen gets its first baselines.
+  workflow_dispatch:
+    inputs:
+      accept:
+        description: Write what this run renders to the deployment's baselines.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -51,6 +60,14 @@ jobs:
             echo "::error::VARIANCE_INGEST_TOKEN is not set. It is the INGEST_TOKEN that 'npm run provision' printed for $VARIANCE_TRIBUNAL; save it as a repository secret."
             exit 2
           fi
+
+      - name: decide whether this run accepts
+        id: accept
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VARIANCE_ACCEPT_LABEL: 'variance: accept'
+          VARIANCE_DISPATCH_ACCEPT: ${{ inputs.accept }}
+        run: node .github/scripts/variance-accept.mjs
 
       - run: npm ci
       - run: npm run app:fetch
@@ -90,6 +107,8 @@ jobs:
         with:
           config: variance.config.deploy.json
           comment: ${{ github.event_name == 'pull_request' }}
+          intent: ${{ steps.accept.outputs.intent }}
+          accept: ${{ steps.accept.outputs.promote }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           to-accept: 'approve or reject each subject on the review service, then re-run this check.'
 

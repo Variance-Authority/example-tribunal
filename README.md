@@ -243,11 +243,13 @@ without an account, so it is a check CI can run on every commit.
 shop on every pull request, reads it against the deployment's baselines, and
 pushes the build there whatever the verdict. The comment on the pull request
 says what changed; the build page is where you decide. Approve every changed
-subject, re-run the check, and it compares against what you approved.
+subject, re-run the check, and it compares against what you approved. A renderer
+the deployment has never seen gets its first baselines from a dispatch of the
+workflow with `accept` ticked, which writes what it renders through.
 
 The workflow carries the ingest token as the `VARIANCE_INGEST_TOKEN` secret and
-stops at its first step without it. The review token never reaches this
-repository's CI.
+stops before it builds anything without it. The review token never reaches
+this repository's CI.
 
 Every week the variance-authority repository opens a pull request here that
 changes the product the card stories render. It checks that the check goes red,
