@@ -11,7 +11,8 @@ name: variance
 # changes one product card's story, watches the check go red, approves the
 # change through the deployment's API, re-runs the check, and closes the pull
 # request without merging. That is its end-to-end test of the tribunal review
-# flow.
+# flow. The approval moves `main`'s baselines too, so it ends by dispatching
+# this workflow on `main` with `accept` ticked.
 
 on:
   push:
@@ -114,10 +115,12 @@ jobs:
 
       # Red or green, the build goes to the deployment: a red one is what a
       # person decides on there, and a green one is history. Not after exit 2,
-      # which wrote no report worth deciding on.
+      # which wrote no report worth deciding on. Not when the run never started
+      # either: an output that was never written is null, and Actions compares
+      # null equal to '0', so the outcome is checked first.
       - name: put the build in front of a reviewer
         if: >-
-          !cancelled() &&
+          !cancelled() && steps.variance.outcome != 'skipped' &&
           (steps.variance.outputs.exit-code == '0' || steps.variance.outputs.exit-code == '1')
         env:
           VARIANCE_BRANCH: ${{ github.head_ref || github.ref_name }}

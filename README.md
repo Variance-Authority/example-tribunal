@@ -254,7 +254,10 @@ this repository's CI.
 Every week the variance-authority repository opens a pull request here that
 changes the product the card stories render. It checks that the check goes red,
 approves the change through the deployment's API with the review token it holds,
-re-runs the check, and closes the pull request without merging.
+re-runs the check, and closes the pull request without merging. An approval is
+not scoped to a branch — it moves the baseline every branch compares against —
+so it then dispatches the workflow on `main` with `accept` ticked, which gives
+`main` its own render back.
 
 ## What is in here
 
